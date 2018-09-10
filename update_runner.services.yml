@@ -1,0 +1,7 @@
+services:
+  plugin.manager.update_runner_processor_plugin:
+    class: Drupal\update_runner\Plugin\UpdateRunnerProcessorPluginManager
+    parent: default_plugin_manager
+  update_runner.manager:
+    class: Drupal\update_runner\UpdateRunnerManager
+    arguments: ['@config.factory', '@entity.manager', '@plugin.manager.update_runner_processor_plugin']

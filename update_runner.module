@@ -1,0 +1,86 @@
+<?php
+
+/**
+ * @file
+ * Contains update_runnner.module.
+ */
+
+use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\update\UpdateManagerInterface;
+
+const UPDATE_RUNNER_JOB_NOT_PROCESSED = 0;
+const UPDATE_RUNNER_JOB_PROCESSED = 1;
+const UPDATE_RUNNER_JOB_FAILED = 2;
+
+/**
+ * Implements hook_help().
+ */
+function update_runner_help($route_name, RouteMatchInterface $route_match) {
+  switch ($route_name) {
+    // Main module help for the update_runner module.
+    case 'help.page.update_runner':
+      $output = '';
+      $output .= '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t('Automatic Updates') . '</p>';
+      return $output;
+
+    default:
+  }
+}
+
+/**
+ * Implements hook_update_status_alter().
+ * @param $projects
+ */
+function update_runner_update_status_alter(&$projects) {
+
+  $updates = [];
+
+  // Loop through projects to be updated.
+  if (!empty($projects)) {
+    foreach ($projects as $projectId => $project) {
+      if (in_array($project['status'], [
+        UpdateManagerInterface::NOT_CURRENT,
+        UpdateManagerInterface::NOT_SECURE
+      ])) {
+        $updates[] = $project;
+      }
+    }
+  }
+
+  $ids = Drupal::entityQuery('update_runner_processor')
+    ->execute();
+
+  if (!empty($updates) && !empty($ids)) {
+    foreach ($ids as $id) {
+
+      $md5 = md5(serialize($updates));
+
+      // Do not insert if already created.
+      $ids = Drupal::entityQuery('update_runner_job')
+        ->condition('status', UPDATE_RUNNER_JOB_NOT_PROCESSED)
+        ->condition('hash', $md5)
+        ->execute();
+
+      if (!empty($ids)) {
+        continue;
+      }
+
+      $values = array(
+        'hash' => $md5,
+        'status' => UPDATE_RUNNER_JOB_NOT_PROCESSED,
+        'created' => time(),
+        'processor' => $id,
+      );
+
+      $entity = \Drupal::entityTypeManager()
+        ->getStorage('update_runner_job')
+        ->create($values);
+      $entity->save();
+    }
+  }
+}
+
+function update_runner_cron() {
+
+}
