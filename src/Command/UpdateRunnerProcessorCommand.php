@@ -22,7 +22,7 @@ class UpdateRunnerProcessorCommand extends ContainerAwareCommand {
    */
   protected function configure() {
     $this
-      ->setName('update_runner:process')
+      ->setName('update_runner:process');
   }
 
   /**
@@ -31,6 +31,5 @@ class UpdateRunnerProcessorCommand extends ContainerAwareCommand {
   protected function execute(InputInterface $input, OutputInterface $output) {
     $updatesManager = \Drupal::service('update_runner.manager');
     $updatesManager->process();
-
   }
 }
