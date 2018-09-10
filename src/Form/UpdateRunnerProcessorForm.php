@@ -132,11 +132,10 @@ class UpdateRunnerProcessorForm extends EntityForm {
 
     $pluginType = $this->entity->get('plugin');
     $plugin = $this->processorPluginManager->createInstance($pluginType);
-    $formOptions = $plugin->formOptions();
 
-    // @TODO: Bug with nested array
-    if (!empty($formOptions)) {
-      foreach ($formOptions as $key => $option) {
+    $optionsKeys = $plugin->optionsKeys();
+    if (!empty($optionsKeys)) {
+      foreach ($optionsKeys as $key) {
         $data[$key] = $form_state->getValue($key);
       }
     }

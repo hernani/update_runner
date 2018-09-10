@@ -10,7 +10,7 @@ use Drupal\Core\Form\FormStateInterface;
  *
  * @ingroup update_runner
  */
-class ScheduledSiteUpdateForm extends ContentEntityForm {
+class UpdateRunnerJobForm extends ContentEntityForm {
 
   /**
    * {@inheritdoc}
@@ -34,17 +34,17 @@ class ScheduledSiteUpdateForm extends ContentEntityForm {
 
     switch ($status) {
       case SAVED_NEW:
-        drupal_set_message($this->t('Created the %label Scheduled site update.', [
+        drupal_set_message($this->t('Created the %label update runner job.', [
           '%label' => $entity->label(),
         ]));
         break;
 
       default:
-        drupal_set_message($this->t('Saved the %label Scheduled site update.', [
+        drupal_set_message($this->t('Saved the %label update runner job.', [
           '%label' => $entity->label(),
         ]));
     }
-    $form_state->setRedirect('entity.scheduled_site_update.canonical', ['scheduled_site_update' => $entity->id()]);
+    $form_state->setRedirect('entity.update_runner_job.canonical', ['update_runner_job' => $entity->id()]);
   }
 
 }

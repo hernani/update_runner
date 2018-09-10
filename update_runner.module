@@ -58,7 +58,7 @@ function update_runner_update_status_alter(&$projects) {
 
       // Do not insert if already created.
       $ids = Drupal::entityQuery('update_runner_job')
-        ->condition('status', UPDATE_RUNNER_JOB_NOT_PROCESSED)
+        ->condition('processor', $id)
         ->condition('hash', $md5)
         ->execute();
 
@@ -81,6 +81,10 @@ function update_runner_update_status_alter(&$projects) {
   }
 }
 
+/**
+ * Implements hook_runner_cron().
+ */
 function update_runner_cron() {
-
+  $updatesManager = \Drupal::service('update_runner.manager');
+  $updatesManager->process();
 }

@@ -8,6 +8,7 @@ use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\Core\Plugin\PluginBase;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ConnectException;
+use GuzzleHttp\Exception\RequestException;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 
@@ -55,7 +56,7 @@ class GithubUpdateRunnerProcessorPlugin extends PluginBase implements ContainerF
 
     // check if file already exists
     try {
-      $query = $this->http_client->get($this->configuration['api_endpoint'] . '/repos/' . $this->configuration['api_repository'] . '/contents/update_runner.json', [
+      $query = $this->http_client->get($this->configuration['api_endpoint'] . 'repos/' . $this->configuration['api_repository'] . '/contents/update_runner.json', [
         'headers' => [
           'Authorization' => $auth,
         ]
@@ -63,14 +64,16 @@ class GithubUpdateRunnerProcessorPlugin extends PluginBase implements ContainerF
 
       $contents = json_decode($query->getBody()->getContents());
     } catch (ConnectException $e) {
-      return UPDATE_RUNNER_JOB_FAILED;
+      var_dump('sa1');
     }
-
+    catch (RequestException $e) {
+      // File might not only exists
+    }
 
     $object = [
       'committer' => [
         'name' => $this->configuration['api_commiter_name'],
-        'email' => $this->configuration['api_commiter_mail']
+        'email' => $this->configuration['api_commiter_email']
       ],
       'message' => 'Automatic Updates Commit',
       'content' => base64_encode(json_encode(['time' => time()]))
@@ -81,22 +84,25 @@ class GithubUpdateRunnerProcessorPlugin extends PluginBase implements ContainerF
       $object['sha'] = $contents->sha;
     }
 
-    $query = $this->http_client->put($this->configuration['api_endpoint'] . '/repos/ ' .  $this->configuration['api_repository'] . '/contents/update_runner.json', [
-      'body' => json_encode($object),
-      'headers' => [
-        'Accept' => 'application/json',
-        'Content-Type' => 'application/json',
-        'Authorization' => $auth,
-      ]
-    ]);
-
-    var_dump($query);
-    var_dump('ole');
-    $build = [];
-
-    // Implement your logic
-
+    try {
+      $query = $this->http_client->put($this->configuration['api_endpoint'] . 'repos/' . $this->configuration['api_repository'] . '/contents/update_runner.json', [
+        'body' => json_encode($object),
+        'headers' => [
+          'Accept' => 'application/json',
+          'Content-Type' => 'application/json',
+          'Authorization' => $auth,
+        ]
+      ]);
+    }
+    catch (RequestException $e) {
+      var_dump($e->getResponse());
+      return UPDATE_RUNNER_JOB_FAILED;
+    }
     return UPDATE_RUNNER_JOB_PROCESSED;
+  }
+
+  public function optionsKeys() {
+    return ['api_endpoint', 'api_repository', 'api_username', 'api_token', 'api_commiter_name', 'api_commiter_email'];
   }
 
   /**
@@ -152,7 +158,7 @@ class GithubUpdateRunnerProcessorPlugin extends PluginBase implements ContainerF
       '#default_value' => !empty($defaultValues['api_commiter_name']) ? $defaultValues['api_commiter_name'] : ''
     ];
 
-    $formOptions['api_commiter']['api_committer_email'] = [
+    $formOptions['api_commiter']['api_commiter_email'] = [
       '#type' => 'textfield',
       '#title' => t('Email'),
       '#label' => t('Email'),

@@ -25,10 +25,10 @@ use Drupal\user\UserInterface;
  *     "list_builder" = "Drupal\update_runner\UpdateRunnerJobListBuilder",
  *     "views_data" = "Drupal\views\EntityViewsData",
  *     "form" = {
- *       "default" = "Drupal\update_runner\Form\UpdateRunnerJobUpdateForm",
+ *       "default" = "Drupal\update_runner\Form\UpdateRunnerJobForm",
  *       "add" = "Drupal\update_runner\Form\UpdateRunnerJobForm",
  *       "edit" = "Drupal\update_runner\Form\UpdateRunnerJobForm",
- *       "delete" = "Drupal\update_runner\Form\UpdateRunnerJobForm",
+ *       "delete" = "Drupal\Core\Entity\ContentEntityDeleteForm",
  *     },
  *     "access" = "Drupal\update_runner\UpdateRunnerJobAccessControlHandler",
  *     "route_provider" = {
@@ -42,7 +42,10 @@ use Drupal\user\UserInterface;
  *     "status" = "status",
  *   },
  *   links = {
- *     "collection" = "/admin/config/update_runner/jobs",
+ *     "canonical" = "/admin/config/update_runner/jobs/{update_runner_job}",
+ *     "edit-form" = "/admin/config/update_runner/jobs/{update_runner_job}/edit",
+ *     "delete-form" = "/admin/config/update_runner/jobs/{update_runner_job}/delete",
+ *     "collection" = "/admin/config/update_runner/jobs"
  *   }
  * )
  */
