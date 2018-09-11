@@ -1,22 +1,2 @@
-add scheduled site update entities:
-  title: 'Create new Scheduled site update entities'
-
-administer scheduled site update entities:
-  title: 'Administer Scheduled site update entities'
-  description: 'Allow to access the administration form to configure Scheduled site update entities.'
-  restrict access: true
-
-delete scheduled site update entities:
-  title: 'Delete Scheduled site update entities'
-
-edit scheduled site update entities:
-  title: 'Edit Scheduled site update entities'
-
-view published scheduled site update entities:
-  title: 'View published Scheduled site update entities'
-
-view unpublished scheduled site update entities:
-  title: 'View unpublished Scheduled site update entities'
-
 administer update runner configuration:
-  title: 'Qdminister update runner configuration'
+  title: 'Administer update runner configuration'
