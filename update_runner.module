@@ -6,7 +6,8 @@
  */
 
 use Drupal\Core\Routing\RouteMatchInterface;
-use Drupal\update\UpdateManagerInterface;
+use Drupal\update_runner\CronOperations;
+use Drupal\update_runner\UpdateInfo;
 
 const UPDATE_RUNNER_JOB_NOT_PROCESSED = 0;
 const UPDATE_RUNNER_JOB_PROCESSED = 1;
@@ -21,7 +22,7 @@ function update_runner_help($route_name, RouteMatchInterface $route_match) {
     case 'help.page.update_runner':
       $output = '';
       $output .= '<h3>' . t('About') . '</h3>';
-      $output .= '<p>' . t('Automatic Updates') . '</p>';
+      $output .= '<p>' . t('Update runner') . '</p>';
       return $output;
 
     default:
@@ -30,61 +31,18 @@ function update_runner_help($route_name, RouteMatchInterface $route_match) {
 
 /**
  * Implements hook_update_status_alter().
- * @param $projects
  */
 function update_runner_update_status_alter(&$projects) {
-
-  $updates = [];
-
-  // Loop through projects to be updated.
-  if (!empty($projects)) {
-    foreach ($projects as $projectId => $project) {
-      if (in_array($project['status'], [
-        UpdateManagerInterface::NOT_CURRENT,
-        UpdateManagerInterface::NOT_SECURE
-      ])) {
-        $updates[] = $project;
-      }
-    }
-  }
-
-  $ids = Drupal::entityQuery('update_runner_processor')
-    ->execute();
-
-  if (!empty($updates) && !empty($ids)) {
-    foreach ($ids as $id) {
-
-      $md5 = md5(serialize($updates));
-
-      // Do not insert if already created.
-      $ids = Drupal::entityQuery('update_runner_job')
-        ->condition('processor', $id)
-        ->condition('hash', $md5)
-        ->execute();
-
-      if (!empty($ids)) {
-        continue;
-      }
-
-      $values = array(
-        'hash' => $md5,
-        'status' => UPDATE_RUNNER_JOB_NOT_PROCESSED,
-        'created' => time(),
-        'processor' => $id,
-      );
-
-      $entity = \Drupal::entityTypeManager()
-        ->getStorage('update_runner_job')
-        ->create($values);
-      $entity->save();
-    }
-  }
+  return \Drupal::service('class_resolver')
+    ->getInstanceFromDefinition(UpdateInfo::class)
+    ->updateStatusAlter($projects);
 }
 
 /**
- * Implements hook_runner_cron().
+ * Implements hook_cron().
  */
 function update_runner_cron() {
-  $updatesManager = \Drupal::service('update_runner.manager');
-  $updatesManager->process();
+  return \Drupal::service('class_resolver')
+    ->getInstanceFromDefinition(CronOperations::class)
+    ->cron();
 }
