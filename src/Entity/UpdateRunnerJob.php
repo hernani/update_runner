@@ -149,7 +149,7 @@ class UpdateRunnerJob extends ContentEntityBase implements ContentEntityInterfac
       ->setDisplayConfigurable('form', TRUE)
       ->setRequired(TRUE);
 
-    $fields['data'] = BaseFieldDefinition::create('text_long')
+    $fields['data'] = BaseFieldDefinition::create('string_long')
       ->setLabel(t('Data'))
       ->setDescription(t('Data'))
       ->setRevisionable(FALSE)

@@ -65,7 +65,10 @@ class UpdateInfo implements ContainerInjectionInterface {
           UpdateManagerInterface::NOT_CURRENT,
           UpdateManagerInterface::NOT_SECURE
         ])) {
-          $updates[] = $project;
+          $updates[$projectId]['name'] = $project['name'];
+          $updates[$projectId]['info'] = $project['info'];
+          $updates[$projectId]['existing_version'] = $project['existing_version'];
+          $updates[$projectId]['recommended'] = $project['recommended'];
         }
       }
     }
@@ -96,6 +99,7 @@ class UpdateInfo implements ContainerInjectionInterface {
           'hash' => $md5,
           'status' => UPDATE_RUNNER_JOB_NOT_PROCESSED,
           'created' => time(),
+          'data' => serialize($updates),
           'processor' => $id,
         );
 
