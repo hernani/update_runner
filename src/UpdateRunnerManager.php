@@ -48,10 +48,9 @@ class UpdateRunnerManager {
       $processorConfig = $this->configFactory->get('update_runner.update_runner_processor.' . $update->processor->value);
       $pluginType = $processorConfig->get('plugin');
 
-      $status = $this->pluginManager->createInstance($pluginType, unserialize($processorConfig->get('data')))->run($update->data->value);
+      $status = $this->pluginManager->createInstance($pluginType, unserialize($processorConfig->get('data')))->run($update);
       $update->status = $status;
       $update->save();
     }
   }
-
 }

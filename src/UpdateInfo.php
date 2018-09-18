@@ -2,9 +2,11 @@
 
 namespace Drupal\update_runner;
 
+use Drupal\Core\Config\ConfigFactory;
 use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\update\UpdateManagerInterface;
+use Drupal\update_runner\Plugin\UpdateRunnerProcessorPluginManager;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -29,9 +31,12 @@ class UpdateInfo implements ContainerInjectionInterface {
    *
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    *   The entity type manager service.
+   * @param \Drupal\update_runner\Plugin\UpdateRunnerProcessorPluginManager $pluginManager
    */
-  public function __construct(EntityTypeManagerInterface $entity_type_manager) {
+  public function __construct(EntityTypeManagerInterface $entity_type_manager, UpdateRunnerProcessorPluginManager $pluginManager, ConfigFactory $config_factory) {
     $this->entityTypeManager = $entity_type_manager;
+    $this->pluginManager = $pluginManager;
+    $this->configFactory = $config_factory;
   }
 
   /**
@@ -39,7 +44,9 @@ class UpdateInfo implements ContainerInjectionInterface {
    */
   public static function create(ContainerInterface $container) {
     return new static(
-      $container->get('entity_type.manager')
+      $container->get('entity_type.manager'),
+      $container->get('plugin.manager.update_runner_processor_plugin'),
+      $container->get('config.factory')
     );
   }
 
@@ -73,13 +80,13 @@ class UpdateInfo implements ContainerInjectionInterface {
       }
     }
 
-    $ids = $this->entityTypeManager
+    $processors = $this->entityTypeManager
       ->getStorage("update_runner_processor")
       ->getQuery()
       ->execute();
 
-    if (!empty($updates) && !empty($ids)) {
-      foreach ($ids as $id) {
+    if (!empty($updates) && !empty($processors)) {
+      foreach ($processors as $id) {
 
         $md5 = md5(serialize($updates));
 
@@ -103,10 +110,11 @@ class UpdateInfo implements ContainerInjectionInterface {
           'processor' => $id,
         );
 
-        $entity = $this->entityTypeManager
-          ->getStorage('update_runner_job')
-          ->create($values);
-        $entity->save();
+        $processorConfig = $this->configFactory->get('update_runner.update_runner_processor.' . $id);
+        $pluginType = $processorConfig->get('plugin');
+
+        // Insert job
+        $this->pluginManager->createInstance($pluginType, [])->insert($values);
       }
     }
   }

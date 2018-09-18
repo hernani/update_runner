@@ -5,11 +5,9 @@ namespace Drupal\update_runner\Plugin\UpdateRunnerProcessorPlugin;
 use Drupal\Component\Plugin\PluginInspectionInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
-use Drupal\Core\Plugin\PluginBase;
-use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Exception\RequestException;
-use Symfony\Component\DependencyInjection\ContainerInterface;
+
 
 
 /**
@@ -18,45 +16,18 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *  label = @Translation("Github Processor"),
  * )
  */
-class GithubUpdateRunnerProcessorPlugin extends PluginBase implements ContainerFactoryPluginInterface, PluginInspectionInterface {
-
-  /**
-   * Constructs a Automatic object.
-   *
-   * @param array $configuration
-   * @param string $plugin_id
-   * @param mixed $plugin_definition
-   * @param \GuzzleHttp\Client $http_client
-   */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, Client $http_client) {
-    parent::__construct($configuration, $plugin_id, $plugin_definition);
-    $this->http_client = $http_client;
-    $this->configuration = $configuration;
-
-  }
+class GithubUpdateRunnerProcessorPlugin extends UpdateRunnerProcessorPlugin implements ContainerFactoryPluginInterface, PluginInspectionInterface {
 
   /**
    * {@inheritdoc}
    */
-  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
-    return new static(
-      $configuration,
-      $plugin_id,
-      $plugin_definition,
-      $container->get('http_client')
-    );
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function run() {
+  public function run($job) {
 
     $auth = 'Basic ' . base64_encode($this->configuration['api_username'] . ':' . $this->configuration['api_token']);
 
     // check if file already exists
     try {
-      $query = $this->http_client->get($this->configuration['api_endpoint'] . 'repos/' . $this->configuration['api_repository'] . '/contents/update_runner.json', [
+      $query = $this->http_client->get(trim($this->configuration['api_endpoint']) . '/repos/' . $this->configuration['api_repository'] . '/contents/update_runner.json', [
         'headers' => [
           'Authorization' => $auth,
         ]
@@ -64,7 +35,7 @@ class GithubUpdateRunnerProcessorPlugin extends PluginBase implements ContainerF
 
       $contents = json_decode($query->getBody()->getContents());
     } catch (ConnectException $e) {
-      var_dump('sa1');
+
     }
     catch (RequestException $e) {
       // File might not only exists
@@ -76,7 +47,7 @@ class GithubUpdateRunnerProcessorPlugin extends PluginBase implements ContainerF
         'email' => $this->configuration['api_commiter_email']
       ],
       'message' => 'Automatic Updates Commit',
-      'content' => base64_encode(json_encode(['time' => time()]))
+      'content' => base64_encode(json_encode(unserialize($job->data->value)))
     ];
 
     // file already exists, just updates
@@ -95,14 +66,15 @@ class GithubUpdateRunnerProcessorPlugin extends PluginBase implements ContainerF
       ]);
     }
     catch (RequestException $e) {
-      var_dump($e->getResponse());
+      $this->logger->error("Update runner process for github plugin failed:  %msg", ['%msg' => $e->getMessage()]);
       return UPDATE_RUNNER_JOB_FAILED;
     }
-    return UPDATE_RUNNER_JOB_PROCESSED;
+
+    return parent::run($job);
   }
 
   public function optionsKeys() {
-    return ['api_endpoint', 'api_repository', 'api_username', 'api_token', 'api_commiter_name', 'api_commiter_email'];
+    return array_merge(parent::optionsKeys(), ['api_endpoint', 'api_repository', 'api_username', 'api_token', 'api_commiter_name', 'api_commiter_email']);
   }
 
   /**
@@ -111,39 +83,43 @@ class GithubUpdateRunnerProcessorPlugin extends PluginBase implements ContainerF
    */
   public function formOptions(EntityInterface $entity = NULL) {
 
-    $formOptions = [];
-    $defaultValues = [];
+    $formOptions = parent::formOptions($entity);
 
-    if (!empty($entity) && !empty($entity->get('data'))) {
-      $defaultValues = unserialize($entity->get('data'));
-    }
+    $formOptions['github'] = [
+      '#type' => 'fieldset',
+      '#title' => t('Github configuration')
+    ];
 
-    $formOptions['api_endpoint'] = [
+    $formOptions['github']['api_endpoint'] = [
       '#type' => 'textfield',
       '#title' => t('API Endpoint'),
-      '#description' => t('In case of github.com, should be https://api.github.com/'),
-      '#default_value' => !empty($defaultValues['api_endpoint']) ? $defaultValues['api_endpoint'] : ''
+      '#required' => TRUE,
+      '#description' => t('In case of github.com, should be https://api.github.com . Do not include trailing slash'),
+      '#default_value' => !empty($this->defaultValues['api_endpoint']) ? $this->defaultValues['api_endpoint'] : 'https://api.github.com'
     ];
 
-    $formOptions['api_repository'] = [
+    $formOptions['github']['api_repository'] = [
       '#type' => 'textfield',
       '#title' => t('Repository'),
+      '#required' => TRUE,
       '#description' => t('Repository that should be used (format organization/repository)'),
-      '#default_value' => !empty($defaultValues['api_repository']) ? $defaultValues['api_repository'] : ''
+      '#default_value' => !empty($this->defaultValues['api_repository']) ? $this->defaultValues['api_repository'] : ''
     ];
 
-    $formOptions['api_username'] = [
+    $formOptions['github']['api_username'] = [
       '#type' => 'textfield',
       '#title' => t('Username'),
+      '#required' => TRUE,
       '#description' => t('The username with access to the repository'),
-      '#default_value' => !empty($defaultValues['api_username']) ? $defaultValues['api_username'] : ''
+      '#default_value' => !empty($this->defaultValues['api_username']) ? $this->defaultValues['api_username'] : ''
     ];
 
-    $formOptions['api_token'] = [
+    $formOptions['github']['api_token'] = [
       '#type' => 'textfield',
       '#title' => t('Token'),
+      '#required' => TRUE,
       '#description' => t('Token field to use'),
-      '#default_value' => !empty($defaultValues['api_token']) ? $defaultValues['api_token'] : ''
+      '#default_value' => !empty($this->defaultValues['api_token']) ? $this->defaultValues['api_token'] : ''
     ];
 
     $formOptions['api_commiter'] = [
@@ -154,32 +130,19 @@ class GithubUpdateRunnerProcessorPlugin extends PluginBase implements ContainerF
     $formOptions['api_commiter']['api_commiter_name'] = [
       '#type' => 'textfield',
       '#title' => t('Name'),
-      '#label' => t('Name'),
-      '#default_value' => !empty($defaultValues['api_commiter_name']) ? $defaultValues['api_commiter_name'] : ''
+      '#required' => TRUE,
+      '#default_value' => !empty($this->defaultValues['api_commiter_name']) ? $this->defaultValues['api_commiter_name'] : ''
     ];
 
     $formOptions['api_commiter']['api_commiter_email'] = [
       '#type' => 'textfield',
       '#title' => t('Email'),
-      '#label' => t('Email'),
-      '#default_value' => !empty($defaultValues['api_commiter_email']) ? $defaultValues['api_commiter_email'] : ''
+      '#required' => TRUE,
+      '#default_value' => !empty($this->defaultValues['api_commiter_email']) ? $this->defaultValues['api_commiter_email'] : ''
     ];
 
     return $formOptions;
   }
 
-  /**
-   * {@inheritdoc}
-   */
-  public function getPluginId() {
-    // Gets the plugin_id of the plugin instance.
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function getPluginDefinition() {
-    // Gets the definition of the plugin implementation.
-  }
 
 }
