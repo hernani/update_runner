@@ -35,7 +35,12 @@ class UpdateRunnerSettingsForm extends ConfigFormBase implements ContainerInject
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
 
-    return parent::buildForm($form, $form_state);
+    $form['help'] = [
+      '#type' => 'markup',
+      '#markup' => t('To setup update runner, create processors to handle update jobs when updates are detected. Jobs will be run on cron or on demand.')
+    ];
+
+    return $form;
   }
 
   /**
