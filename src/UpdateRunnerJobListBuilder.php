@@ -33,11 +33,24 @@ class UpdateRunnerJobListBuilder extends EntityListBuilder {
     /* @var $entity \Drupal\update_runner\Entity\UpdateRunnerJob */
     $row['id'] = $entity->id();
     $row['created'] = date('Y-m-d H:i:s', $entity->get('created')->value);
-    $row['status'] = $entity->get('status')->value;
+    $row['status'] = $this->getUpdateJobStatus($entity->get('status')->value);
     $row['processor'] = $entity->get('processor')->value;
     $row['changed'] = $entity->get('status')->value ? date('Y-m-d H:i:s', $entity->get('changed')->value) : '';
 
     return $row + parent::buildRow($entity);
+  }
+
+  /*
+   * Returns textual description of the status
+   */
+  private function getUpdateJobStatus($status) {
+    $statuses = [
+      UPDATE_RUNNER_JOB_FAILED => t('Failed'),
+      UPDATE_RUNNER_JOB_NOT_PROCESSED => t('Not processed'),
+      UPDATE_RUNNER_JOB_PROCESSED => t('Processed')
+    ];
+
+    return $statuses[$status];
   }
 
 }
