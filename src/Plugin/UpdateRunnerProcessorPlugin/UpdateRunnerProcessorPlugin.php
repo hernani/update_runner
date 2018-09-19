@@ -134,7 +134,7 @@ class UpdateRunnerProcessorPlugin extends PluginBase implements ContainerFactory
   public function run($job) {
     // Emits event.
     $updateRunnerJobEvent = new  UpdateRunnerEvent($job);
-    $this->event_dispatcher->dispatch(UpdateRunnerEvent::UPDATE_RUNNER_JOB_CREATED, $updateRunnerJobEvent);
+    $this->event_dispatcher->dispatch(UpdateRunnerEvent::UPDATE_RUNNER_JOB_COMPLETED, $updateRunnerJobEvent);
 
     return UPDATE_RUNNER_JOB_PROCESSED;
   }

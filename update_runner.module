@@ -8,6 +8,7 @@
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\update_runner\CronOperations;
 use Drupal\update_runner\UpdateInfo;
+use Drupal\update_runner\UpdateRunnerMail;
 
 const UPDATE_RUNNER_JOB_NOT_PROCESSED = 0;
 const UPDATE_RUNNER_JOB_PROCESSED = 1;
@@ -45,4 +46,13 @@ function update_runner_cron() {
   return \Drupal::service('class_resolver')
     ->getInstanceFromDefinition(CronOperations::class)
     ->cron();
+}
+
+/**
+ * Implements hook_mail().
+ */
+function update_runner_mail($key, &$message, $params) {
+  return \Drupal::service('class_resolver')
+    ->getInstanceFromDefinition(UpdateRunnerMail::class)
+    ->mailDefinition($key, $message, $params);
 }
