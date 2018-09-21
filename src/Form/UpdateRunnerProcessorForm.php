@@ -16,7 +16,9 @@ class UpdateRunnerProcessorForm extends EntityForm {
 
   /**
    * Class constructor.
+   *
    * @param \Drupal\update_runner\Plugin\UpdateRunnerProcessorPluginManager $processorPluginManager
+   *   Plugin manager.
    */
   public function __construct(UpdateRunnerProcessorPluginManager $processorPluginManager) {
     $this->processorPluginManager = $processorPluginManager;
@@ -27,7 +29,6 @@ class UpdateRunnerProcessorForm extends EntityForm {
    */
   public static function create(ContainerInterface $container) {
     // Instantiates this form class.
-
     return new static(
       // Load the service required to construct this class.
       $container->get('plugin.manager.update_runner_processor_plugin')
@@ -51,7 +52,7 @@ class UpdateRunnerProcessorForm extends EntityForm {
       }
     }
 
-    // The entity being created
+    // The entity being created.
     $update_runner_processor = $this->entity;
 
     $form['label'] = [
@@ -66,7 +67,7 @@ class UpdateRunnerProcessorForm extends EntityForm {
     if (!empty($this->entity->get('plugin'))) {
       $pluginType = $this->entity->get('plugin');
     }
-    else if ($form_state->getValue('plugin')) {
+    elseif ($form_state->getValue('plugin')) {
       $pluginType = $form_state->getValue('plugin');
     }
 
@@ -80,10 +81,10 @@ class UpdateRunnerProcessorForm extends EntityForm {
         '#required' => TRUE,
       ];
 
-      $form['container'] = array(
+      $form['container'] = [
         '#prefix' => '<div id="plugin-container-options">',
         '#suffix' => '</div>',
-      );
+      ];
 
       $plugin = $this->processorPluginManager->createInstance($pluginType);
       $form['container'] = array_merge($form['container'], $plugin->formOptions($this->entity));
@@ -95,15 +96,15 @@ class UpdateRunnerProcessorForm extends EntityForm {
         '#options' => $pluginOptions,
         '#required' => TRUE,
         '#ajax'   => [
-          'callback' => '::plugin_options_ajax_callback',
+          'callback' => '::pluginOptionsAjaxCallback',
           'wrapper'  => 'plugin-container-options',
         ],
       ];
 
-      $form['container'] = array(
+      $form['container'] = [
         '#prefix' => '<div id="plugin-container-options">',
         '#suffix' => '</div>',
-      );
+      ];
     }
 
     $form['id'] = [
@@ -118,11 +119,21 @@ class UpdateRunnerProcessorForm extends EntityForm {
     return $form;
   }
 
-  public function plugin_options_ajax_callback(array $form, FormStateInterface $form_state) {
+  /**
+   * Callback function for options rendering.
+   *
+   * @param array $form
+   *   Form.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   Form state.
+   *
+   * @return mixed
+   *   Rendered form.
+   */
+  public function pluginOptionsAjaxCallback(array $form, FormStateInterface $form_state) {
     $form_state->setRebuild(TRUE);
     return $form['container'];
   }
-
 
   /**
    * {@inheritdoc}
@@ -158,4 +169,5 @@ class UpdateRunnerProcessorForm extends EntityForm {
 
     $form_state->setRedirectUrl($update_runner_processor->toUrl('collection'));
   }
+
 }

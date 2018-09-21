@@ -4,7 +4,6 @@ namespace Drupal\update_runner;
 
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityListBuilder;
-use Drupal\Core\Link;
 
 /**
  * Defines a class to build a listing of Scheduled site update entities.
@@ -12,7 +11,6 @@ use Drupal\Core\Link;
  * @ingroup update_runner
  */
 class UpdateRunnerJobListBuilder extends EntityListBuilder {
-
 
   /**
    * {@inheritdoc}
@@ -40,14 +38,14 @@ class UpdateRunnerJobListBuilder extends EntityListBuilder {
     return $row + parent::buildRow($entity);
   }
 
-  /*
-   * Returns textual description of the status
+  /**
+   * Returns textual description of the status.
    */
   private function getUpdateJobStatus($status) {
     $statuses = [
       UPDATE_RUNNER_JOB_FAILED => t('Failed'),
       UPDATE_RUNNER_JOB_NOT_PROCESSED => t('Not processed'),
-      UPDATE_RUNNER_JOB_PROCESSED => t('Processed')
+      UPDATE_RUNNER_JOB_PROCESSED => t('Processed'),
     ];
 
     return $statuses[$status];

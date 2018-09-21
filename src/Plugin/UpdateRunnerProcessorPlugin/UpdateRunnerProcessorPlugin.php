@@ -14,28 +14,40 @@ use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
-
 /**
- * @property \GuzzleHttp\Client http_client
+ * Base class for update runner processor plugins.
+ *
+ * @property \GuzzleHttp\Client httpClient
  */
 class UpdateRunnerProcessorPlugin extends PluginBase implements ContainerFactoryPluginInterface, PluginInspectionInterface {
 
   protected $defaultValues;
-  protected $http_client;
+  protected $httpClient;
 
   /**
    * Constructs a Automatic object.
    *
    * @param array $configuration
+   *   Configuration array.
    * @param string $plugin_id
+   *   Plugin id.
    * @param mixed $plugin_definition
+   *   Plugin definition.
    * @param \GuzzleHttp\Client $http_client
+   *   HttpClient.
    * @param \Drupal\update_runner\Plugin\UpdateRunnerProcessorPluginManager $pluginManager
+   *   Plugin Manager.
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
+   *   Entity type manager.
+   * @param \Symfony\Component\EventDispatcher\EventDispatcherInterface $event_dispatcher
+   *   Event dispatcher.
+   * @param \Psr\Log\LoggerInterface $logger
+   *   Logger.
    */
   public function __construct(array $configuration, $plugin_id, $plugin_definition, Client $http_client, UpdateRunnerProcessorPluginManager $pluginManager, EntityTypeManagerInterface $entity_type_manager, EventDispatcherInterface $event_dispatcher, LoggerInterface $logger) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
 
-    $this->http_client = $http_client;
+    $this->httpClient = $http_client;
     $this->configuration = $configuration;
     $this->pluginManager = $pluginManager;
     $this->entityTypeManager = $entity_type_manager;
@@ -60,8 +72,13 @@ class UpdateRunnerProcessorPlugin extends PluginBase implements ContainerFactory
   }
 
   /**
-   * @param \Drupal\Core\Entity\EntityInterface|NULL $entity
+   * Define form options for the processor.
+   *
+   * @param \Drupal\Core\Entity\EntityInterface|null $entity
+   *   Processor being configured.
+   *
    * @return array
+   *   Form array being returned.
    */
   public function formOptions(EntityInterface $entity = NULL) {
 
@@ -74,7 +91,7 @@ class UpdateRunnerProcessorPlugin extends PluginBase implements ContainerFactory
 
     $formOptions['processor_config'] = [
       '#type' => 'fieldset',
-      '#title' => t('Processor configuration')
+      '#title' => t('Processor configuration'),
     ];
 
     $formOptions['processor_config']['update_type'] = [
@@ -86,28 +103,30 @@ class UpdateRunnerProcessorPlugin extends PluginBase implements ContainerFactory
       '#options' => [
         'all' => t('All newer versions'),
         'security' => t('Only security updates'),
-      ]
+      ],
     ];
 
     $formOptions['processor_config']['notify_on_create'] = [
       '#type' => 'checkbox',
       '#title' => t('Notify on job created'),
       '#description' => t('Notify site admin by email when job is created'),
-      '#default_value' => !empty($this->defaultValues['notify_on_create']) ? $this->defaultValues['notify_on_create'] : ''
+      '#default_value' => !empty($this->defaultValues['notify_on_create']) ? $this->defaultValues['notify_on_create'] : '',
     ];
 
     $formOptions['processor_config']['notify_on_complete'] = [
       '#type' => 'checkbox',
       '#title' => t('Notify on job completed'),
       '#description' => t('Notify site admin by email when job is completed'),
-      '#default_value' => !empty($this->defaultValues['notify_on_complete']) ? $this->defaultValues['notify_on_complete'] : ''
+      '#default_value' => !empty($this->defaultValues['notify_on_complete']) ? $this->defaultValues['notify_on_complete'] : '',
     ];
 
     return $formOptions;
 
   }
 
-
+  /**
+   * Define keys used in the configuration.
+   */
   public function optionsKeys() {
     return ['update_type', 'notify_on_create', 'notify_on_complete'];
   }
@@ -123,17 +142,17 @@ class UpdateRunnerProcessorPlugin extends PluginBase implements ContainerFactory
     $entity->save();
 
     // Emits event.
-    $updateRunnerJobEvent = new  UpdateRunnerEvent($entity);
+    $updateRunnerJobEvent = new UpdateRunnerEvent($entity);
     $this->event_dispatcher->dispatch(UpdateRunnerEvent::UPDATE_RUNNER_JOB_CREATED, $updateRunnerJobEvent);
 
   }
 
   /**
-   * Execute job
+   * Execute job.
    */
   public function run($job) {
     // Emits event.
-    $updateRunnerJobEvent = new  UpdateRunnerEvent($job);
+    $updateRunnerJobEvent = new UpdateRunnerEvent($job);
     $this->event_dispatcher->dispatch(UpdateRunnerEvent::UPDATE_RUNNER_JOB_COMPLETED, $updateRunnerJobEvent);
 
     return UPDATE_RUNNER_JOB_PROCESSED;

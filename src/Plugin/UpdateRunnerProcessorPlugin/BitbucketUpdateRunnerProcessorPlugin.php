@@ -8,8 +8,9 @@ use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use GuzzleHttp\Exception\ClientException;
 
-
 /**
+ * Defines the bitbucket processor plugin.
+ *
  * @UpdateRunnerProcessorPlugin(
  *  id = "bitbucket_update_runner_processor_plugin",
  *  label = @Translation("Bitbucket Processor"),
@@ -29,17 +30,18 @@ class BitbucketUpdateRunnerProcessorPlugin extends UpdateRunnerProcessorPlugin i
 
     $auth = 'Bearer ' . $access_token;
 
-    // check previous sha1
+    // Check previous sha1.
     try {
-      $query = $this->http_client->get($this->configuration['api_endpoint'] . '/repositories/' . $this->configuration['api_repository'] . '/refs/branches/' . $this->configuration['api_branch'], [
+      $query = $this->httpClient->get($this->configuration['api_endpoint'] . '/repositories/' . $this->configuration['api_repository'] . '/refs/branches/' . $this->configuration['api_branch'], [
         'headers' => [
           'Authorization' => $auth,
-        ]
+        ],
       ]);
 
       $contents = json_decode($query->getBody()->getContents());
-    } catch (ClientException $e) {
-      // might be first commit
+    }
+    catch (ClientException $e) {
+      // Might be first commit.
     }
 
     $object = [
@@ -49,22 +51,23 @@ class BitbucketUpdateRunnerProcessorPlugin extends UpdateRunnerProcessorPlugin i
       'message' => 'Update Runner Commit - ' . date('Y-m-d H:i:s'),
     ];
 
-    // make sure previous commit is parent
+    // Make sure previous commit is parent.
     if (!empty($contents)) {
       $object['parents'] = $contents->target->hash;
     }
 
-    // does the push
+    // Does the push.
     try {
-      $query = $this->http_client->post(trim($this->configuration['api_endpoint']) . '/repositories/' . $this->configuration['api_repository'] . '/src', [
+      $query = $this->httpClient->post(trim($this->configuration['api_endpoint']) . '/repositories/' . $this->configuration['api_repository'] . '/src', [
         'form_params' => (array) ($object),
         'headers' => [
           'Authorization' => $auth,
-          'Content-Type' => 'application/x-www-form-urlencoded'
-        ]
+          'Content-Type' => 'application/x-www-form-urlencoded',
+        ],
       ]);
 
-    } catch (RequestException $e) {
+    }
+    catch (RequestException $e) {
       $this->logger->error("Update runner process for bitbucket plugin failed: %msg", ['%msg' => $e->getMessage()]);
       return UPDATE_RUNNER_JOB_FAILED;
     }
@@ -72,25 +75,32 @@ class BitbucketUpdateRunnerProcessorPlugin extends UpdateRunnerProcessorPlugin i
     return parent::run($job);
   }
 
+  /**
+   * Gets the access token to use in following calls.
+   */
   private function getAccessToken() {
     $auth = 'Basic ' . base64_encode(trim($this->configuration['api_key']) . ':' . trim($this->configuration['api_secret']));
 
     try {
-      $query = $this->http_client->post('https://bitbucket.org/site/oauth2/access_token', [
+      $query = $this->httpClient->post('https://bitbucket.org/site/oauth2/access_token', [
         'form_params' => ['grant_type' => 'client_credentials'],
         'headers' => [
           'Authorization' => $auth,
-        ]
+        ],
       ]);
 
       $contents = json_decode($query->getBody()->getContents());
       return $contents->access_token;
-    } catch (ClientException $e) {
+    }
+    catch (ClientException $e) {
       $this->logger->error("Update runner process for bitbucket plugin failed: %msg", ['%msg' => $e->getMessage()]);
       return UPDATE_RUNNER_JOB_FAILED;;
     }
   }
 
+  /**
+   * Returns keys used for configuration.
+   */
   public function optionsKeys() {
     return array_merge(parent::optionsKeys(), [
       'api_endpoint',
@@ -98,13 +108,18 @@ class BitbucketUpdateRunnerProcessorPlugin extends UpdateRunnerProcessorPlugin i
       'api_key',
       'api_secret',
       'api_branch',
-      'api_commiter_info'
+      'api_commiter_info',
     ]);
   }
 
   /**
-   * @param \Drupal\update_runner\Plugin\UpdateRunnerProcessorPlugin\EntityInterface|NULL $entity
+   * Returns form options for processor configuration.
+   *
+   * @param \Drupal\update_runner\Plugin\UpdateRunnerProcessorPlugin\EntityInterface|null $entity
+   *   Processor to configure.
+   *
    * @return array
+   *   Form for configuration.
    */
   public function formOptions(EntityInterface $entity = NULL) {
 
@@ -112,7 +127,7 @@ class BitbucketUpdateRunnerProcessorPlugin extends UpdateRunnerProcessorPlugin i
 
     $formOptions['bitbucket'] = [
       '#type' => 'fieldset',
-      '#title' => t('Bitbucket configuration')
+      '#title' => t('Bitbucket configuration'),
     ];
 
     $formOptions['bitbucket']['api_endpoint'] = [
@@ -128,7 +143,7 @@ class BitbucketUpdateRunnerProcessorPlugin extends UpdateRunnerProcessorPlugin i
       '#title' => t('Repository'),
       '#description' => t('Repository to use'),
       '#required' => TRUE,
-      '#default_value' => !empty($this->defaultValues['api_repository']) ? $this->defaultValues['api_repository'] : ''
+      '#default_value' => !empty($this->defaultValues['api_repository']) ? $this->defaultValues['api_repository'] : '',
     ];
 
     $formOptions['bitbucket']['api_key'] = [
@@ -136,7 +151,7 @@ class BitbucketUpdateRunnerProcessorPlugin extends UpdateRunnerProcessorPlugin i
       '#title' => t('Key'),
       '#description' => t('Key to use'),
       '#required' => TRUE,
-      '#default_value' => !empty($this->defaultValues['api_key']) ? $this->defaultValues['api_key'] : ''
+      '#default_value' => !empty($this->defaultValues['api_key']) ? $this->defaultValues['api_key'] : '',
     ];
 
     $formOptions['bitbucket']['api_secret'] = [
@@ -144,7 +159,7 @@ class BitbucketUpdateRunnerProcessorPlugin extends UpdateRunnerProcessorPlugin i
       '#title' => t('Secret'),
       '#description' => t('Secret to use'),
       '#required' => TRUE,
-      '#default_value' => !empty($this->defaultValues['api_secret']) ? $this->defaultValues['api_secret'] : ''
+      '#default_value' => !empty($this->defaultValues['api_secret']) ? $this->defaultValues['api_secret'] : '',
     ];
 
     $formOptions['bitbucket']['api_branch'] = [
@@ -152,7 +167,7 @@ class BitbucketUpdateRunnerProcessorPlugin extends UpdateRunnerProcessorPlugin i
       '#title' => t('Branch'),
       '#required' => TRUE,
       '#description' => t('The branch to use'),
-      '#default_value' => !empty($this->defaultValues['api_branch']) ? $this->defaultValues['api_branch'] : ''
+      '#default_value' => !empty($this->defaultValues['api_branch']) ? $this->defaultValues['api_branch'] : '',
     ];
 
     $formOptions['api_commiter'] = [
@@ -165,7 +180,7 @@ class BitbucketUpdateRunnerProcessorPlugin extends UpdateRunnerProcessorPlugin i
       '#title' => t('Committer info'),
       '#required' => TRUE,
       '#description' => Html::escape(t("Name <email>")),
-      '#default_value' => !empty($this->defaultValues['api_commiter_info']) ? $this->defaultValues['api_commiter_info'] : ''
+      '#default_value' => !empty($this->defaultValues['api_commiter_info']) ? $this->defaultValues['api_commiter_info'] : '',
     ];
 
     return $formOptions;

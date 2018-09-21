@@ -4,13 +4,10 @@ namespace Drupal\update_runner\Entity;
 
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityChangedInterface;
-use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\Entity\ContentEntityBase;
 use Drupal\Core\Entity\EntityChangedTrait;
 use Drupal\Core\Entity\EntityTypeInterface;
-use Drupal\user\EntityOwnerInterface;
-use Drupal\user\UserInterface;
 
 /**
  * Defines the job update runner entity.
@@ -52,13 +49,6 @@ use Drupal\user\UserInterface;
 class UpdateRunnerJob extends ContentEntityBase implements ContentEntityInterface, EntityChangedInterface {
 
   use EntityChangedTrait;
-
-  /**
-   * {@inheritdoc}
-   */
-  public static function preCreate(EntityStorageInterface $storage_controller, array &$values) {
-    parent::preCreate($storage_controller, $values);
-  }
 
   /**
    * {@inheritdoc}
@@ -118,16 +108,16 @@ class UpdateRunnerJob extends ContentEntityBase implements ContentEntityInterfac
       ->setDescription(t('Hash'))
       ->setRevisionable(FALSE)
       ->setTranslatable(FALSE)
-      ->setDisplayOptions('form', array(
+      ->setDisplayOptions('form', [
         'type' => 'string_textfield',
-        'settings' => array(
+        'settings' => [
           'display_label' => TRUE,
-        ),
-      ))
-      ->setDisplayOptions('view', array(
+        ],
+      ])
+      ->setDisplayOptions('view', [
         'label' => 'hidden',
         'type' => 'string',
-      ))
+      ])
       ->setDisplayConfigurable('form', TRUE)
       ->setRequired(TRUE);
 
@@ -136,16 +126,16 @@ class UpdateRunnerJob extends ContentEntityBase implements ContentEntityInterfac
       ->setDescription(t('Processor'))
       ->setRevisionable(FALSE)
       ->setTranslatable(FALSE)
-      ->setDisplayOptions('form', array(
+      ->setDisplayOptions('form', [
         'type' => 'string_textfield',
-        'settings' => array(
+        'settings' => [
           'display_label' => TRUE,
-        ),
-      ))
-      ->setDisplayOptions('view', array(
+        ],
+      ])
+      ->setDisplayOptions('view', [
         'label' => 'hidden',
         'type' => 'string',
-      ))
+      ])
       ->setDisplayConfigurable('form', TRUE)
       ->setRequired(TRUE);
 

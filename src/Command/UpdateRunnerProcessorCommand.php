@@ -5,7 +5,6 @@ namespace Drupal\update_runner\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Drupal\Console\Core\Command\ContainerAwareCommand;
-use Drupal\Console\Annotations\DrupalCommand;
 
 /**
  * Class UpdateRunnerProcessorCommand.
@@ -32,4 +31,5 @@ class UpdateRunnerProcessorCommand extends ContainerAwareCommand {
     $updatesManager = \Drupal::service('update_runner.manager');
     $updatesManager->process();
   }
+
 }

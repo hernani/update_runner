@@ -19,7 +19,6 @@ class CronOperations implements ContainerInjectionInterface {
    */
   protected $updateRunnerManager;
 
-
   /**
    * CronOperations constructor.
    *

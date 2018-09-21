@@ -55,7 +55,6 @@ class UpdateRunnerProcessor extends ConfigEntityBase implements ConfigEntityInte
    */
   protected $label;
 
-
   /**
    * {@inheritdoc}
    */
@@ -73,4 +72,5 @@ class UpdateRunnerProcessor extends ConfigEntityBase implements ConfigEntityInte
 
     return $fields;
   }
+
 }

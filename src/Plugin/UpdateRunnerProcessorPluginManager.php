@@ -11,7 +11,6 @@ use Drupal\Core\Extension\ModuleHandlerInterface;
  */
 class UpdateRunnerProcessorPluginManager extends DefaultPluginManager {
 
-
   /**
    * Constructs a new UpdateRunnerProcessorPluginManager object.
    *

@@ -21,9 +21,10 @@ class UpdateRunnerEvent extends Event {
   protected $entity;
 
   /**
-   * Constructs a node insertion demo event object.
+   * Constructs a update runner event object.
    *
    * @param \Drupal\Core\Entity\EntityInterface $entity
+   *   Job being handled.
    */
   public function __construct(EntityInterface $entity) {
     $this->entity = $entity;
@@ -33,8 +34,10 @@ class UpdateRunnerEvent extends Event {
    * Get the inserted entity.
    *
    * @return \Drupal\Core\Entity\EntityInterface
+   *   Job being handled.
    */
   public function getEntity() {
     return $this->entity;
   }
+
 }

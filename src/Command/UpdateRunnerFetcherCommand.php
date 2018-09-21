@@ -5,7 +5,6 @@ namespace Drupal\update_runner\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Drupal\Console\Core\Command\ContainerAwareCommand;
-use Drupal\Console\Annotations\DrupalCommand;
 
 /**
  * Class UpdateRunnerFetcherCommand.
@@ -25,9 +24,9 @@ class UpdateRunnerFetcherCommand extends ContainerAwareCommand {
       ->setName('update_runner:fetch');
   }
 
- /**
-  * {@inheritdoc}
-  */
+  /**
+   * {@inheritdoc}
+   */
   protected function initialize(InputInterface $input, OutputInterface $output) {
     parent::initialize($input, $output);
     $this->getIo()->info('initialize');
@@ -39,4 +38,5 @@ class UpdateRunnerFetcherCommand extends ContainerAwareCommand {
   protected function execute(InputInterface $input, OutputInterface $output) {
     $this->getIo()->info('execute');
   }
+
 }

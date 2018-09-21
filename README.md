@@ -21,5 +21,3 @@ Configuration for gitlab
 
 
 The module is currently in an early development phase.
-
-

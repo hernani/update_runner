@@ -8,9 +8,9 @@ use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Exception\RequestException;
 
-
-
 /**
+ * Defines the github processor plugin.
+ *
  * @UpdateRunnerProcessorPlugin(
  *  id = "github_update_runner_processor_plugin",
  *  label = @Translation("Github Processor"),
@@ -25,44 +25,45 @@ class GithubUpdateRunnerProcessorPlugin extends UpdateRunnerProcessorPlugin impl
 
     $auth = 'Basic ' . base64_encode($this->configuration['api_username'] . ':' . $this->configuration['api_token']);
 
-    // check if file already exists
+    // Check if file already exists.
     try {
-      $query = $this->http_client->get(trim($this->configuration['api_endpoint']) . '/repos/' . $this->configuration['api_repository'] . '/contents/update_runner.json', [
+      $query = $this->httpClient->get(trim($this->configuration['api_endpoint']) . '/repos/' . $this->configuration['api_repository'] . '/contents/update_runner.json', [
         'headers' => [
           'Authorization' => $auth,
-        ]
+        ],
       ]);
 
       $contents = json_decode($query->getBody()->getContents());
-    } catch (ConnectException $e) {
+    }
+    catch (ConnectException $e) {
 
     }
     catch (RequestException $e) {
-      // File might not only exists
+      // File might not only exists.
     }
 
     $object = [
       'committer' => [
         'name' => $this->configuration['api_commiter_name'],
-        'email' => $this->configuration['api_commiter_email']
+        'email' => $this->configuration['api_commiter_email'],
       ],
       'message' => 'Automatic Updates Commit',
-      'content' => base64_encode(json_encode(unserialize($job->data->value)))
+      'content' => base64_encode(json_encode(unserialize($job->data->value))),
     ];
 
-    // file already exists, just updates
+    // File already exists, just updates.
     if (!empty($contents)) {
       $object['sha'] = $contents->sha;
     }
 
     try {
-      $query = $this->http_client->put($this->configuration['api_endpoint'] . 'repos/' . $this->configuration['api_repository'] . '/contents/update_runner.json', [
+      $query = $this->httpClient->put($this->configuration['api_endpoint'] . 'repos/' . $this->configuration['api_repository'] . '/contents/update_runner.json', [
         'body' => json_encode($object),
         'headers' => [
           'Accept' => 'application/json',
           'Content-Type' => 'application/json',
           'Authorization' => $auth,
-        ]
+        ],
       ]);
     }
     catch (RequestException $e) {
@@ -73,13 +74,28 @@ class GithubUpdateRunnerProcessorPlugin extends UpdateRunnerProcessorPlugin impl
     return parent::run($job);
   }
 
+  /**
+   * Define keys used in the configuration.
+   */
   public function optionsKeys() {
-    return array_merge(parent::optionsKeys(), ['api_endpoint', 'api_repository', 'api_username', 'api_token', 'api_commiter_name', 'api_commiter_email']);
+    return array_merge(parent::optionsKeys(), [
+      'api_endpoint',
+      'api_repository',
+      'api_username',
+      'api_token',
+      'api_commiter_name',
+      'api_commiter_email',
+    ]);
   }
 
   /**
-   * @param \Drupal\Core\Entity\EntityInterface|NULL $entity
+   * Function to generate form options for the plugin.
+   *
+   * @param \Drupal\Core\Entity\EntityInterface|null $entity
+   *   Processor used.
+   *
    * @return array
+   *   Return form array used for settings.
    */
   public function formOptions(EntityInterface $entity = NULL) {
 
@@ -87,7 +103,7 @@ class GithubUpdateRunnerProcessorPlugin extends UpdateRunnerProcessorPlugin impl
 
     $formOptions['github'] = [
       '#type' => 'fieldset',
-      '#title' => t('Github configuration')
+      '#title' => t('Github configuration'),
     ];
 
     $formOptions['github']['api_endpoint'] = [
@@ -95,7 +111,7 @@ class GithubUpdateRunnerProcessorPlugin extends UpdateRunnerProcessorPlugin impl
       '#title' => t('API Endpoint'),
       '#required' => TRUE,
       '#description' => t('In case of github.com, should be https://api.github.com . Do not include trailing slash'),
-      '#default_value' => !empty($this->defaultValues['api_endpoint']) ? $this->defaultValues['api_endpoint'] : 'https://api.github.com'
+      '#default_value' => !empty($this->defaultValues['api_endpoint']) ? $this->defaultValues['api_endpoint'] : 'https://api.github.com',
     ];
 
     $formOptions['github']['api_repository'] = [
@@ -103,7 +119,7 @@ class GithubUpdateRunnerProcessorPlugin extends UpdateRunnerProcessorPlugin impl
       '#title' => t('Repository'),
       '#required' => TRUE,
       '#description' => t('Repository that should be used (format organization/repository)'),
-      '#default_value' => !empty($this->defaultValues['api_repository']) ? $this->defaultValues['api_repository'] : ''
+      '#default_value' => !empty($this->defaultValues['api_repository']) ? $this->defaultValues['api_repository'] : '',
     ];
 
     $formOptions['github']['api_username'] = [
@@ -111,7 +127,7 @@ class GithubUpdateRunnerProcessorPlugin extends UpdateRunnerProcessorPlugin impl
       '#title' => t('Username'),
       '#required' => TRUE,
       '#description' => t('The username with access to the repository'),
-      '#default_value' => !empty($this->defaultValues['api_username']) ? $this->defaultValues['api_username'] : ''
+      '#default_value' => !empty($this->defaultValues['api_username']) ? $this->defaultValues['api_username'] : '',
     ];
 
     $formOptions['github']['api_token'] = [
@@ -119,30 +135,29 @@ class GithubUpdateRunnerProcessorPlugin extends UpdateRunnerProcessorPlugin impl
       '#title' => t('Token'),
       '#required' => TRUE,
       '#description' => t('Token field to use'),
-      '#default_value' => !empty($this->defaultValues['api_token']) ? $this->defaultValues['api_token'] : ''
+      '#default_value' => !empty($this->defaultValues['api_token']) ? $this->defaultValues['api_token'] : '',
     ];
 
     $formOptions['api_commiter'] = [
       '#type' => 'fieldset',
-      '#title' => t('Committer information')
+      '#title' => t('Committer information'),
     ];
 
     $formOptions['api_commiter']['api_commiter_name'] = [
       '#type' => 'textfield',
       '#title' => t('Name'),
       '#required' => TRUE,
-      '#default_value' => !empty($this->defaultValues['api_commiter_name']) ? $this->defaultValues['api_commiter_name'] : ''
+      '#default_value' => !empty($this->defaultValues['api_commiter_name']) ? $this->defaultValues['api_commiter_name'] : '',
     ];
 
     $formOptions['api_commiter']['api_commiter_email'] = [
       '#type' => 'textfield',
       '#title' => t('Email'),
       '#required' => TRUE,
-      '#default_value' => !empty($this->defaultValues['api_commiter_email']) ? $this->defaultValues['api_commiter_email'] : ''
+      '#default_value' => !empty($this->defaultValues['api_commiter_email']) ? $this->defaultValues['api_commiter_email'] : '',
     ];
 
     return $formOptions;
   }
-
 
 }
