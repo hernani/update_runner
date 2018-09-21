@@ -4,6 +4,7 @@ namespace Drupal\update_runner\Plugin\UpdateRunnerProcessorPlugin;
 
 use Drupal\Component\Plugin\PluginInspectionInterface;
 use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Exception\RequestException;
@@ -34,11 +35,9 @@ class GithubUpdateRunnerProcessorPlugin extends UpdateRunnerProcessorPlugin impl
       ]);
 
       $contents = json_decode($query->getBody()->getContents());
-    }
-    catch (ConnectException $e) {
+    } catch (ConnectException $e) {
 
-    }
-    catch (RequestException $e) {
+    } catch (RequestException $e) {
       // File might not only exists.
     }
 
@@ -65,8 +64,7 @@ class GithubUpdateRunnerProcessorPlugin extends UpdateRunnerProcessorPlugin impl
           'Authorization' => $auth,
         ],
       ]);
-    }
-    catch (RequestException $e) {
+    } catch (RequestException $e) {
       $this->logger->error("Update runner process for github plugin failed:  %msg", ['%msg' => $e->getMessage()]);
       return UPDATE_RUNNER_JOB_FAILED;
     }
@@ -158,6 +156,41 @@ class GithubUpdateRunnerProcessorPlugin extends UpdateRunnerProcessorPlugin impl
     ];
 
     return $formOptions;
+  }
+
+  /**
+   * Validates introduced settings.
+   *
+   * @param array $form
+   *   Form.
+   * @param \Drupal\update_runner\Plugin\UpdateRunnerProcessorPlugin\FormStateInterface $form_state
+   *   Form state.
+   */
+  public function validate(array &$form, FormStateInterface $form_state) {
+
+    $auth = 'Basic ' . base64_encode($form_state->getValue('api_username') . ':' . $form_state->getValue('api_token'));
+    $repo = $form_state->getValue('api_endpoint') . 'repos/' . $form_state->getValue('api_repository');
+
+    try {
+      $query = $this->httpClient->get($repo, [
+        'headers' => [
+          'Accept' => 'application/json',
+          'Content-Type' => 'application/json',
+          'Authorization' => $auth,
+        ],
+      ]);
+
+      $repoDetails = json_decode($query->getBody()->getContents());
+      if (!$repoDetails->permissions->push) {
+        $form_state->setErrorByName('api_repository', t('Repository correcly recognized, but the used user/token pair does not have permissions to push'));
+      }
+
+    } catch (\Exception $e) {
+      $form_state->setErrorByName('api_repository', t('Impossible to query repository %repo, please verify your settings. Error %error', [
+        '%repo' => $repo,
+        '%error' => $e->getMessage()
+      ]));
+    }
   }
 
 }

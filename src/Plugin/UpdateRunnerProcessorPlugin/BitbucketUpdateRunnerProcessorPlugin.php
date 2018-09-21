@@ -5,6 +5,7 @@ namespace Drupal\update_runner\Plugin\UpdateRunnerProcessorPlugin;
 use Drupal\Component\Plugin\PluginInspectionInterface;
 use Drupal\Component\Utility\Html;
 use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use GuzzleHttp\Exception\ClientException;
 
@@ -23,7 +24,7 @@ class BitbucketUpdateRunnerProcessorPlugin extends UpdateRunnerProcessorPlugin i
    */
   public function run($job) {
 
-    $access_token = $this->getAccessToken();
+    $access_token = $this->getAccessToken($this->configuration['api_key'], $this->configuration['api_secret']);
     if (!$access_token) {
       return UPDATE_RUNNER_JOB_FAILED;
     }
@@ -78,8 +79,8 @@ class BitbucketUpdateRunnerProcessorPlugin extends UpdateRunnerProcessorPlugin i
   /**
    * Gets the access token to use in following calls.
    */
-  private function getAccessToken() {
-    $auth = 'Basic ' . base64_encode(trim($this->configuration['api_key']) . ':' . trim($this->configuration['api_secret']));
+  private function getAccessToken($api_key, $api_secret) {
+    $auth = 'Basic ' . base64_encode(trim($api_key) . ':' . trim($api_secret));
 
     try {
       $query = $this->httpClient->post('https://bitbucket.org/site/oauth2/access_token', [
@@ -184,6 +185,42 @@ class BitbucketUpdateRunnerProcessorPlugin extends UpdateRunnerProcessorPlugin i
     ];
 
     return $formOptions;
+  }
+
+  /**
+   * Validates introduced settings.
+   *
+   * @param array $form
+   *   Form.
+   * @param \Drupal\update_runner\Plugin\UpdateRunnerProcessorPlugin\FormStateInterface $form_state
+   *   Form state.
+   */
+  public function validate(array &$form, FormStateInterface $form_state) {
+
+    $access_token = $this->getAccessToken($form_state->getValue('api_key'), $form_state->getValue('api_secret'));
+
+    if (!$access_token) {
+      return UPDATE_RUNNER_JOB_FAILED;
+    }
+
+    $auth = 'Bearer ' . $access_token;
+    $repo = $form_state->getValue('api_endpoint') . '/repositories/' . $form_state->getValue('api_repository');
+
+    // Get defined repo.
+    try {
+      $query = $this->httpClient->get($repo . '/refs/branches/' . $form_state->getValue('api_branch'), [
+        'headers' => [
+          'Authorization' => $auth,
+        ],
+      ]);
+      // $contents = json_decode($query->getBody()->getContents());
+    }
+    catch (\Exception $e) {
+      $form_state->setErrorByName('api_repository', t('Impossible to query repository %repo, please verify your settings. Error %error', [
+        '%repo' => $repo,
+        '%error' => $e->getMessage()
+      ]));
+    }
   }
 
 }

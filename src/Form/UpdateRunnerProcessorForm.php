@@ -135,6 +135,15 @@ class UpdateRunnerProcessorForm extends EntityForm {
     return $form['container'];
   }
 
+  public function validateForm(array &$form, FormStateInterface $form_state) {
+    parent::validateForm($form, $form_state);
+
+    $pluginType = $this->entity->get('plugin');
+    $plugin = $this->processorPluginManager->createInstance($pluginType);
+
+    $plugin->validate($form, $form_state);
+  }
+
   /**
    * {@inheritdoc}
    */
